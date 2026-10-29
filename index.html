@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>德尔斐深睡房测算</title>
+<style>
+:root {
+  --bg: #f6f8f6; --card: #ffffff; --ink: #17261f; --ink2: #5d6e66; --line: #e3e9e5;
+  --brand: #1b8a5a; --brand-soft: #e4f2ea; --amber: #e07b2a; --blue: #2a78d6; --pink: #d55181; --olive: #8a7a00;
+  --warm: #f4e6d3; --neg: #b03d32;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 48px; }
+header .eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--ink2); }
+h1 { font-family: "Songti SC", "STSong", "SimSun", serif; font-size: 26px; margin: 4px 0 6px; }
+h2 { font-size: 15px; margin: 0 0 10px; }
+.lede { color: var(--ink2); margin: 0 0 16px; max-width: 860px; }
+.layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.panel { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.presets button, .seg button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 4px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
+.presets button.on, .seg button.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+.field { margin: 10px 0; }
+.field label { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+.field label b { color: var(--brand); font-variant-numeric: tabular-nums; }
+.field .hint { font-size: 11.5px; color: var(--ink2); margin-top: 2px; }
+input[type=range] { width: 100%; accent-color: var(--brand); }
+input[type=number] { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; color: #0033cc; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.grp { font-size: 12px; font-weight: 700; color: var(--ink2); letter-spacing: .06em; margin: 16px 0 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+.grp:first-of-type { border-top: 0; padding-top: 0; margin-top: 4px; }
+details.more summary { cursor: pointer; font-size: 13px; color: var(--brand); margin-top: 12px; }
+.reset { margin-top: 12px; width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px; font: inherit; cursor: pointer; }
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.kpi .k { font-size: 12px; color: var(--ink2); }
+.kpi .v { font-family: "Songti SC", serif; font-size: 24px; font-weight: 700; color: var(--brand); font-variant-numeric: tabular-nums; line-height: 1.25; margin-top: 2px; }
+.kpi .s { font-size: 11.5px; color: var(--ink2); }
+.verdict { background: var(--warm); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g2 > .card { margin-bottom: 0; }
+.row2 { margin-bottom: 14px; }
+svg text { font-family: inherit; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; margin-bottom: 4px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { background: #2f6a55; color: #fff; font-weight: 600; position: sticky; top: 0; }
+td.neg { color: var(--neg); }
+tr.hl td { background: var(--warm); font-weight: 700; }
+.scroll { overflow-x: auto; }
+.mtbl { max-height: 380px; overflow: auto; }
+.dn { display: flex; gap: 14px; align-items: center; }
+.lg { display: grid; grid-template-columns: 10px 1fr auto 40px; gap: 6px; align-items: center; margin: 5px 0; font-size: 13px; }
+.lg i { width: 10px; height: 10px; border-radius: 2px; }
+.lg em { font-style: normal; color: var(--ink2); text-align: right; }
+.hb { display: grid; grid-template-columns: 150px 1fr 44px; gap: 8px; align-items: center; margin: 8px 0; font-size: 13px; }
+.track { height: 12px; background: #eef2ef; border-radius: 0 5px 5px 0; }
+.track i { display: block; height: 100%; border-radius: 0 5px 5px 0; }
+.hb b { text-align: right; }
+.notes { font-size: 12px; color: var(--ink2); }
+.notes p { margin: 0 0 6px; }
+.tip { position: fixed; pointer-events: none; background: #17261f; color: #fff; font-size: 12px; padding: 6px 9px; border-radius: 6px; opacity: 0; transition: opacity .1s; z-index: 9; white-space: nowrap; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel { position: static; max-height: none; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .g2 { grid-template-columns: 1fr; gap: 14px; }
+  .hb { grid-template-columns: 110px 1fr 40px; }
+  h1 { font-size: 22px; }
+}
+@media print { .panel { display: none; } .layout { grid-template-columns: 1fr; } }
+.wrap { max-width: 1440px; padding: 14px 16px 40px; }
+h1 { font-size: 21px; margin: 2px 0 2px; }
+.lede { font-size: 12.5px; margin: 0 0 10px; }
+.layout { grid-template-columns: 236px 1fr; gap: 12px; }
+.card { padding: 10px 12px; margin-bottom: 10px; border-radius: 8px; }
+h2 { font-size: 13.5px; margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel { font-size: 12.5px; padding: 10px 12px; }
+.panel h2 { margin-bottom: 8px; }
+.presets { gap: 4px; margin-bottom: 6px; }
+.presets button, .seg button { padding: 5px 2px; font-size: 12px; border-radius: 6px; }
+.field { margin: 7px 0; }
+.field label { font-size: 12.5px; margin-bottom: 1px; }
+.field .hint { font-size: 11px; margin-top: 0; }
+input[type=number] { padding: 4px 6px; font-size: 12.5px; }
+.grp { margin: 10px 0 2px; padding-top: 8px; font-size: 11.5px; }
+details.more summary { margin-top: 8px; font-size: 12.5px; }
+.reset { margin-top: 8px; padding: 6px; font-size: 12.5px; }
+.kpis { gap: 8px; margin-bottom: 8px; }
+.kpi { padding: 8px 10px; border-radius: 8px; }
+.kpi .k { font-size: 11.5px; } .kpi .v { font-size: 21px; } .kpi .s { font-size: 11px; }
+.verdict { padding: 7px 12px; margin-bottom: 10px; font-size: 13px; border-radius: 8px; }
+.dash1 { display: grid; grid-template-columns: 1.75fr 1fr; gap: 10px; }
+.dash2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.dash1 > .card, .dash2 > .card { margin-bottom: 10px; }
+.legend { font-size: 11.5px; font-weight: 400; margin: 0; gap: 10px; }
+.dn { gap: 8px; }
+.lg { font-size: 12px; margin: 3px 0; grid-template-columns: 9px 1fr auto 34px; gap: 5px; }
+.hb { grid-template-columns: 112px 1fr 44px; margin: 6px 0; font-size: 12px; gap: 6px; }
+table.tight td { padding: 3px 4px; font-size: 12.5px; }
+.notes { font-size: 11px; }
+.layout > *, .dash1 > *, .dash2 > *, .kpis > * { min-width: 0; }
+main { min-width: 0; }
+.seg2 { grid-template-columns: 1fr 1fr; }
+.tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 5px; text-align: center; font-size: 12px; color: var(--ink2); }
+.inl { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink2); margin-top: 3px; }
+.inl input { width: 78px; }
+.mini { margin-top: 5px; border: 1px solid var(--brand); color: var(--brand); background: #fff; border-radius: 6px; padding: 4px 8px; font: inherit; font-size: 12px; cursor: pointer; width: 100%; }
+.below { font-size: 12px; color: var(--ink2); text-align: center; margin: 2px 0 10px; }
+@media (max-width: 1100px) { .dash2 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .dash1, .dash2 { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">ATW DEEP SLEEP × 杭州钱江新城德尔斐酒店 · 样板项目</div>
+  <h1>深睡自然疗愈客房：盈利测算（可调参数版）</h1>
+  <p class="lede">左侧调参数，右侧图表即时变化。默认值与 Excel / PDF 一致：按酒店采购价计成本、零售价计收入，溢价 100% 归酒店，2026 年 11 月起逐月计算。</p>
+</header>
+<div class="layout">
+<aside class="card panel" id="panel">
+  <h2>参数调整</h2>
+  <div class="presets" id="presets"></div>
+  <div class="grp">深睡房</div>
+  <div class="field"><div class="seg seg2" id="modeSeg"><button data-m="one">统一加价</button><button data-m="mix">分档加价</button></div></div>
+  <div id="oneBox">
+    <div class="field"><label>深睡房数量 <b id="v-rooms"></b></label><input type="range" id="rooms" min="5" max="60" step="1"><div class="hint" id="h-rooms"></div></div>
+    <div class="field"><label>每晚加价</label><div class="seg" id="premSeg"></div><input type="number" id="prem" min="0" max="200" step="5" style="margin-top:5px"><div class="hint">约为房价 ¥672–758 的 4–7%</div></div>
+  </div>
+  <div id="mixBox">
+    <div class="field"><label>各档深睡房间数</label>
+      <div class="tiers"><span>+¥30</span><span>+¥40</span><span>+¥50</span><input type="number" id="n30" min="0" step="1"><input type="number" id="n40" min="0" step="1"><input type="number" id="n50" min="0" step="1"></div>
+      <div class="hint" id="v-mix"></div></div>
+  </div>
+  <div class="field"><label>深睡房出租率 <b id="v-occ"></b></label><input type="range" id="occ" min="0.2" max="1" step="0.01">
+    <div class="inl">每月卖出 <input type="number" id="sold" min="0" step="10"> 单（间夜）</div></div>
+  <div class="grp">酒店实际（开会现场填）</div>
+  <div class="field"><label>酒店已开业客房数</label><input type="number" id="hotelRooms" min="1" step="1"><div class="hint">总房量 201 间，目前已开 90 间</div></div>
+  <div class="field"><label>全酒店每月售出间夜</label><input type="number" id="hotelSold" min="0" step="50">
+    <div class="hint" id="v-hotel"></div><button class="mini" id="useHotel">深睡房按全酒店出租率算</button></div>
+  <div class="field"><label>每瓶精油用几晚 <b id="v-nights"></b></label><input type="range" id="nights" min="3" max="9" step="1"><div class="hint">每晚约开 14 小时，基准 5 晚</div></div>
+  <div class="grp">住客购买</div>
+  <div class="field"><label>现场购买转化率 <b id="v-conv"></b></label><input type="range" id="conv" min="0" max="0.15" step="0.005"><div class="hint">80% 买精油、20% 买 MiniSpace</div></div>
+  <div class="field"><label>睡眠喷雾购买率 <b id="v-spray"></b></label><input type="range" id="spray" min="0" max="0.10" step="0.005"></div>
+  <div class="field"><label>离店线上购买率 <b id="v-online"></b></label><input type="range" id="online" min="0" max="0.15" step="0.005"><div class="hint">酒店拿 10% 佣金</div></div>
+  <details class="more"><summary>价格与成本（点开修改）</summary>
+    <div class="field"><label>精油住客售价（元/瓶）</label><input type="number" id="oilPrice" step="1"></div>
+    <div class="field"><label>精油首单进价（元/瓶）</label><input type="number" id="oilCost" step="1"></div>
+    <div class="field"><label>精油补单进价（元/瓶，每次 ≥100 瓶）</label><input type="number" id="refillCost" step="1"></div>
+    <div class="field"><label>MiniSpace 住客售价 / 进价（元）</label><div class="seg" style="grid-template-columns:1fr 1fr"><input type="number" id="devPrice"><input type="number" id="devCost"></div></div>
+    <div class="field"><label>睡眠喷雾 30 ml 售价 / 进价（元）</label><div class="seg" style="grid-template-columns:1fr 1fr"><input type="number" id="sprayPrice"><input type="number" id="sprayCost"></div></div>
+    <div class="field"><label>其他运营成本（元/月）</label><input type="number" id="other" step="50"></div>
+  </details>
+  <button class="reset" id="reset">恢复默认（基准 ¥40）</button>
+</aside>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+  <div class="verdict" id="verdict"></div>
+  <div class="dash1">
+    <div class="card"><h2>24 个月累计净现金 <span class="legend" id="cashLegend"></span></h2><div id="cashChart"></div></div>
+    <div class="card"><h2>一年毛利从哪来</h2><div class="dn"><div id="donut"></div><div id="donutLeg" style="flex:1"></div></div></div>
+  </div>
+  <div class="dash2">
+    <div class="card"><h2>每卖 1 间夜，酒店净赚</h2><table id="ledger" class="tight"></table></div>
+    <div class="card"><h2>年利润率 vs 酒店各部门</h2><div id="bench"></div><div class="notes"><p>行业参照为美国市场、已扣人工；本项目未计前台与客房部人工。</p></div></div>
+    <div class="card"><h2>扩房 → 回本后年净利</h2><div id="expand"></div></div>
+  </div>
+  <div class="below">↓ 下方：按年汇总、每月目标与员工激励、逐月明细</div>
+
+  <div class="card">
+    <h2>按年看：净利润与净现金</h2>
+    <div class="scroll"><table id="years"></table></div>
+    <div class="notes" style="margin-top:8px"><p><b>净利润</b>：收入减去实际用掉的精油、卖出商品的进货成本、设备 2 年折旧和其他成本。<b>净现金</b>：首单和每次补单在付款当月全额扣除，所以买进还没用完的精油会让净现金暂时低于净利润。</p></div>
+  </div>
+
+
+  <div class="card">
+    <h2>每月卖多少：目标单数与员工激励（按当前参数）</h2>
+    <div class="scroll"><table id="incent"></table></div>
+    <div class="notes" style="margin-top:8px"><p>“单”= 深睡房售出间夜。激励建议：销售部 / 前台每单 ¥4，客房部每单 ¥2，精油 ¥20/瓶、MiniSpace ¥40/台、喷雾 ¥10/支提成；出租率 80% 达标发团队奖 ¥300，超出部分每单再加 ¥3。激励由酒店人力与财务最终确定。</p></div>
+  </div>
+
+  <div class="card">
+    <h2>逐月明细</h2>
+    <div class="scroll mtbl"><table id="monthly"></table></div>
+  </div>
+
+  <div class="card notes">
+    <p>依据：价格、5 折进货、溢价归属、现场零售毛利、线上复购 10% 佣金见《深睡自然疗愈客房战略合作协议》定稿版第五、六条。补单与首单同价 ¥99/瓶、每次至少 100 瓶。月末库存低于 14 天用量即补单并当月付款；回本指累计净现金最后一次转正。</p>
+    <p>本页为经营预估，不构成收益承诺。对住客宣传请使用“睡前放松、旅途恢复、自然疗愈仪式”等表述，避免“治疗失眠”“保证深睡”等医疗化或绝对化用语。</p>
+  </div>
+</main>
+</div>
+</div>
+<div class="tip" id="tip"></div>
+<script>
+// ATW Deep Sleep × 德尔斐：盈利测算模型（与 Excel v5 同一套算法）
+const PRESETS = {
+  b30: { name: "基准 ¥30", prem: 30, occ: 0.65, nights: 5, conv: 0.04, online: 0.03, spray: 0.02 },
+  b40: { name: "基准 ¥40", prem: 40, occ: 0.65, nights: 5, conv: 0.04, online: 0.03, spray: 0.02 },
+  o50: { name: "乐观 ¥50", prem: 50, occ: 0.80, nights: 7, conv: 0.06, online: 0.05, spray: 0.03 },
+};
+const DEFAULTS = {
+  rooms: 10, prem: 40, occ: 0.65, nights: 5, conv: 0.04, online: 0.03, spray: 0.02,
+  devCost: 199, devPrice: 398, oilCost: 99, refillCost: 99, oilPrice: 198,
+  sprayPrice: 99, sprayCost: 50, other: 100, batch: 100, bottlesPerRoom: 10,
+  commission: 0.10, aov: 198, oilShare: 0.80, ml: 10, days: 30, safety: 14,
+};
+
+function monthLabel(m) { const k = 10 + m - 1; return { y: 2026 + Math.floor(k / 12), mo: (k % 12) + 1 }; }
+
+function calc(p) {
+  const bottles = p.rooms * p.bottlesPerRoom;
+  const init = p.rooms * p.devCost + bottles * p.oilCost;
+  const nm = p.rooms * p.occ * p.days;
+  const mlMonth = nm * (p.ml / p.nights + p.conv * p.oilShare * p.ml);
+  const trigger = mlMonth / p.days * p.safety;
+  const firstMl = bottles * p.ml;
+  const batch = Math.max(100, p.batch);
+  const months = [];
+  let stock = firstMl, cum = -init, cumNights = 0, cumMl = 0, cumProfit = 0, payM = null, payN = null;
+  let prevNights = 0;
+  for (let m = 1; m <= 24; m++) {
+    const B = nm;
+    const C = B * p.prem;
+    const D = B * (p.conv * (p.oilShare * p.oilPrice + (1 - p.oilShare) * p.devPrice) + p.spray * p.sprayPrice);
+    const E = -B * (p.conv * (1 - p.oilShare) * p.devCost + p.spray * p.sprayCost);
+    const F = m === 1 ? 0 : prevNights * p.online * p.aov * p.commission;
+    const G = stock, H = mlMonth;
+    let I = 0;
+    if (G - H < trigger) I = Math.ceil((trigger - (G - H)) / (p.ml * batch)) * batch;
+    const J = -I * p.refillCost, K = -p.other;
+    stock = G - H + I * p.ml;
+    const N = C + D + E + F + J + K;
+    const prev = cum; cum += N;
+    if (prev < 0 && cum >= 0) { payM = m - 1 + (-prev) / N; payN = cumNights + (-prev) / N * B; }
+    cumNights += B;
+    // 利润口径
+    const U = C + D + B * p.online * p.aov * p.commission;
+    const cumPrev = cumMl; cumMl += H;
+    const V = -((Math.min(cumMl, firstMl) - Math.min(cumPrev, firstMl)) * p.oilCost
+              + (Math.max(0, cumMl - firstMl) - Math.max(0, cumPrev - firstMl)) * p.refillCost) / p.ml;
+    const W = -p.rooms * p.devCost / 24;
+    const X = U + E + K + V + W;
+    cumProfit += X;
+    const { y, mo } = monthLabel(m);
+    months.push({ m, y, mo, nights: B, prem: C, retail: D, restock: E, comm: F, refill: I, refillPay: J, other: K,
+                  stock, cash: N, cum, rev: U, oilUse: V, dep: W, profit: X, cumProfit });
+    prevNights = B;
+  }
+  // 年度
+  const years = [["2026 年（11–12 月）", 1, 2], ["2027 年（全年）", 3, 14], ["2028 年（1–10 月）", 15, 24]].map(([n, a, b]) => {
+    const ms = months.slice(a - 1, b);
+    const s = k => ms.reduce((t, x) => t + x[k], 0);
+    return { name: n, months: ms.length, nights: s("nights"), rev: s("rev"), profit: s("profit"),
+             cash: s("cash") - (a === 1 ? init : 0), endCum: ms[ms.length - 1].cum };
+  });
+  // 稳态一年
+  const n = nm * 12;
+  const streams = [
+    ["房晚溢价", n * p.prem, n * p.prem],
+    ["10 ml 精油", n * p.conv * p.oilShare * p.oilPrice, n * p.conv * p.oilShare * (p.oilPrice - p.refillCost)],
+    ["MiniSpace", n * p.conv * (1 - p.oilShare) * p.devPrice, n * p.conv * (1 - p.oilShare) * (p.devPrice - p.devCost)],
+    ["30 ml 睡眠喷雾", n * p.spray * p.sprayPrice, n * p.spray * (p.sprayPrice - p.sprayCost)],
+    ["线上复购佣金", n * p.online * p.aov * p.commission, n * p.online * p.aov * p.commission],
+  ];
+  const revenue = streams.reduce((t, s) => t + s[1], 0);
+  const gross = streams.reduce((t, s) => t + s[2], 0);
+  const oilUseYear = -n * p.refillCost / p.nights;
+  const otherYear = -p.other * 12, depYear = -p.rooms * p.devCost / 2;
+  const net = gross + oilUseYear + otherYear + depYear;
+  const perNight = {
+    prem: p.prem, oil: -p.refillCost / p.nights,
+    retailOil: p.conv * p.oilShare * (p.oilPrice - p.refillCost) + p.spray * (p.sprayPrice - p.sprayCost),
+    retailDev: p.conv * (1 - p.oilShare) * (p.devPrice - p.devCost),
+    comm: p.online * p.aov * p.commission, other: nm ? -p.other / nm : 0,
+  };
+  perNight.total = Object.values(perNight).reduce((a, b) => a + b, 0);
+  return { p, init, nm, mlMonth, months, years, streams, revenue, gross, oilUseYear, otherYear, depYear, net,
+           margin: revenue ? net / revenue : 0, payM, payN, perNight, monthlyNet: perNight.total * nm,
+           refills: months.filter(x => x.refill > 0).length, refillAmt: -months.reduce((t, x) => t + x.refillPay, 0),
+           profit2027: years[1].profit, cum24: months[23].cum };
+}
+
+// 销售激励：每月目标与激励（与 Excel「销售激励」表一致）
+const INCENTIVE = { perNight: 4, housekeeping: 2, oil: 20, dev: 40, spray: 10, line: 0.80, over: 3, team: 300 };
+function incentiveRow(p, rooms, occ, inc = INCENTIVE) {
+  const d = rooms * occ * p.days;
+  const oil = d * p.conv * p.oilShare, dev = d * p.conv * (1 - p.oilShare), spray = d * p.spray;
+  const exPrem = -p.refillCost / p.nights + p.conv * p.oilShare * (p.oilPrice - p.refillCost) + p.spray * (p.sprayPrice - p.sprayCost)
+               + p.conv * (1 - p.oilShare) * (p.devPrice - p.devCost) + p.online * p.aov * p.commission;
+  const before = d * (p.prem + exPrem) - p.other - rooms * p.devCost / 24;
+  const sales = d * inc.perNight + oil * inc.oil + dev * inc.dev + spray * inc.spray;
+  const hk = d * inc.housekeeping;
+  const bonus = (occ >= inc.line ? inc.team : 0) + Math.max(0, d - rooms * p.days * inc.line) * inc.over;
+  const total = sales + hk + bonus;
+  return { rooms, occ, d, oil, dev, spray, before, sales, hk, bonus, total, after: before - total };
+}
+
+
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const yen = (v, d = 0) => (v < 0 ? "−¥" : "¥") + Math.abs(v).toLocaleString("zh-CN", { minimumFractionDigits: d, maximumFractionDigits: d });
+const wan = v => (v < 0 ? "−" : "") + (Math.abs(v) / 10000).toFixed(1) + "万";
+const pct = (v, d = 0) => (v * 100).toFixed(d) + "%";
+const CAT = ["#1b8a5a", "#2a78d6", "#e07b2a", "#d55181", "#8a7a00"];
+const EXTRA = { mode: "one", n30: 5, n40: 0, n50: 5, hotelSold: 1755, hotelRooms: 90 };
+let S = { ...DEFAULTS, ...PRESETS.b40, ...EXTRA };
+// 分档加价时：房间数 = 各档之和，溢价 = 加权平均
+function eff(s) {
+  if (s.mode !== "mix") return s;
+  const n = s.n30 + s.n40 + s.n50;
+  return { ...s, rooms: Math.max(1, n), prem: n ? (30 * s.n30 + 40 * s.n40 + 50 * s.n50) / n : 0 };
+}
+const tip = $("tip");
+function showTip(e, html) { tip.innerHTML = html; tip.style.opacity = 1; const x = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8); tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px"; }
+function hideTip() { tip.style.opacity = 0; }
+
+const RANGES = ["rooms", "occ", "nights", "conv", "spray", "online"];
+const NUMS = ["n30", "n40", "n50", "hotelSold", "hotelRooms", "prem", "oilPrice", "oilCost", "refillCost", "devPrice", "devCost", "sprayPrice", "sprayCost", "other"];
+function syncInputs() {
+  for (const k of RANGES.concat(NUMS)) if (document.activeElement !== $(k)) $(k).value = S[k];
+  const E = eff(S);
+  if (document.activeElement !== $("sold")) $("sold").value = Math.round(E.rooms * S.occ * S.days);
+  document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b.dataset.m === S.mode));
+  $("oneBox").style.display = S.mode === "mix" ? "none" : "";
+  $("mixBox").style.display = S.mode === "mix" ? "" : "none";
+  $("v-mix").textContent = `共 ${E.rooms} 间，平均加价 ¥${E.prem.toFixed(1)}`;
+  $("v-hotel").textContent = `全酒店出租率 ${pct(S.hotelSold / (S.hotelRooms * S.days))}（${S.hotelRooms} 间 × 30 天）；深睡房占已开客房 ${pct(E.rooms / S.hotelRooms)}`;
+  $("h-rooms").textContent = `酒店已开 ${S.hotelRooms} 间，深睡房占 ${pct(E.rooms / S.hotelRooms)}；首期 10 间`;
+  $("rooms").max = Math.max(10, Math.min(S.hotelRooms, 201));
+  $("v-rooms").textContent = S.rooms + " 间";
+  $("v-occ").textContent = pct(S.occ);
+  $("v-nights").textContent = S.nights + " 晚 · " + (10 / S.nights).toFixed(1) + " ml";
+  $("v-conv").textContent = pct(S.conv, 1);
+  $("v-spray").textContent = pct(S.spray, 1);
+  $("v-online").textContent = pct(S.online, 1);
+  document.querySelectorAll("#premSeg button").forEach(b => b.classList.toggle("on", +b.dataset.v === S.prem));
+  document.querySelectorAll("#presets button").forEach(b => {
+    const pr = PRESETS[b.dataset.k];
+    b.classList.toggle("on", S.mode === "one" && Object.keys(pr).every(k => k === "name" || pr[k] === S[k]) && S.rooms === 10);
+  });
+}
+$("presets").innerHTML = Object.entries(PRESETS).map(([k, v]) => `<button data-k="${k}">${v.name}</button>`).join("");
+$("presets").onclick = e => { const k = e.target.dataset.k; if (!k) return; const { name, ...v } = PRESETS[k]; S = { ...S, ...v, rooms: 10, mode: "one" }; render(); };
+$("premSeg").innerHTML = [30, 40, 50].map(v => `<button data-v="${v}">¥${v}</button>`).join("");
+$("premSeg").onclick = e => { if (!e.target.dataset.v) return; S.prem = +e.target.dataset.v; render(); };
+for (const k of RANGES.concat(NUMS)) $(k).addEventListener("input", e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { S[k] = v; render(); } });
+$("reset").onclick = () => { S = { ...DEFAULTS, ...PRESETS.b40, ...EXTRA }; render(); };
+$("modeSeg").onclick = e => {
+  const m = e.target.dataset.m; if (!m || m === S.mode) return;
+  if (m === "mix") { S.n30 = Math.ceil(S.rooms / 2); S.n40 = 0; S.n50 = S.rooms - S.n30; }
+  else { const E = eff(S); S.rooms = E.rooms; S.prem = Math.round(E.prem); }
+  S.mode = m; render();
+};
+$("sold").addEventListener("input", e => { const v = parseFloat(e.target.value); const E = eff(S); if (!isNaN(v) && E.rooms) { S.occ = Math.min(1, Math.max(0, v / (E.rooms * S.days))); render(); } });
+$("useHotel").onclick = () => { S.occ = Math.min(1, S.hotelSold / (S.hotelRooms * S.days)); render(); };
+
+function svgEl(w, h, inner) { return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block">${inner}</svg>`; }
+function txt(x, y, s, o = {}) { return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${o.size || 11}" text-anchor="${o.anchor || "start"}" fill="${o.color || "#5d6e66"}" font-weight="${o.weight || 400}">${s}</text>`; }
+
+function cashChart(R) {
+  const presets = Object.values(PRESETS).map(pr => { const { name, ...v } = pr; return { name, curve: [-calc({ ...DEFAULTS, ...v }).init].concat(calc({ ...DEFAULTS, ...v }).months.map(m => m.cum)) }; });
+  const cur = [-R.init].concat(R.months.map(m => m.cum));
+  const all = cur.concat(...presets.map(p => p.curve));
+  const W = 760, H = 232, L = 44, Rr = 104, T = 10, B = 24;
+  let lo = Math.min(0, ...all), hi = Math.max(...all);
+  const step = (hi - lo) > 300000 ? 100000 : (hi - lo) > 120000 ? 50000 : 20000;
+  lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step || step;
+  const fx = m => L + m / 24 * (W - L - Rr), fy = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  let g = "";
+  for (let v = lo; v <= hi + 1; v += step) {
+    g += `<line x1="${L}" x2="${W - Rr}" y1="${fy(v)}" y2="${fy(v)}" stroke="${v === 0 ? "#5d6e66" : "#e3e9e5"}" stroke-width="${v === 0 ? 1 : .7}"/>`;
+    g += txt(L - 6, fy(v) + 4, v === 0 ? "0" : (v / 10000) + "万", { anchor: "end" });
+  }
+  [[0, "2026.11"], [2, "2026 年底"], [8, "2027.6"], [14, "2027 年底"], [20, "2028.6"], [24, "2028.10"]].forEach(([m, l]) => g += txt(fx(m), H - B + 17, l, { anchor: "middle" }));
+  presets.forEach(p => {
+    g += `<path d="${p.curve.map((v, i) => (i ? "L" : "M") + fx(i).toFixed(1) + "," + fy(v).toFixed(1)).join("")}" fill="none" stroke="#a9b8b1" stroke-width="1.3" stroke-dasharray="4 3"/>`;
+    g += txt(fx(24) + 6, fy(p.curve[24]) + 4, p.name + " " + wan(p.curve[24]), { size: 10.5 });
+  });
+  const line = cur.map((v, i) => (i ? "L" : "M") + fx(i).toFixed(1) + "," + fy(v).toFixed(1)).join("");
+  g += `<path d="${line}L${fx(24)},${fy(0)}L${fx(0)},${fy(0)}Z" fill="#1b8a5a" fill-opacity=".14"/>`;
+  g += `<path d="${line}" fill="none" stroke="#1b8a5a" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if (R.payM != null) {
+    const bx = fx(R.payM);
+    g += `<line x1="${bx}" x2="${bx}" y1="${fy(0) - 5}" y2="${fy(0) - 44}" stroke="#5d6e66" stroke-width=".8"/>`;
+    g += `<circle cx="${bx}" cy="${fy(0)}" r="5" fill="#1b8a5a" stroke="#fff" stroke-width="2"/>`;
+    g += txt(bx + 5, fy(0) - 48, `第 ${R.payM.toFixed(1)} 个月回本`, { color: "#17261f", weight: 700, size: 12 });
+  }
+  g += `<g id="hov"></g>`;
+  for (let i = 0; i <= 24; i++) g += `<rect class="hit" data-i="${i}" x="${fx(i) - (W - L - Rr) / 48}" y="${T}" width="${(W - L - Rr) / 24}" height="${H - T - B}" fill="transparent"/>`;
+  $("cashChart").innerHTML = svgEl(W, H, g);
+  $("cashLegend").innerHTML = `<span><i style="background:#1b8a5a"></i>当前参数</span><span><i style="background:#a9b8b1"></i>三个预设情景（虚线）</span><span>悬停看每月明细</span>`;
+  const hov = $("cashChart").querySelector("#hov");
+  $("cashChart").querySelectorAll(".hit").forEach(r => {
+    r.addEventListener("mousemove", e => {
+      const i = +r.dataset.i, m = R.months[i - 1];
+      hov.innerHTML = `<line x1="${fx(i)}" x2="${fx(i)}" y1="${T}" y2="${H - B}" stroke="#17261f" stroke-width=".7"/><circle cx="${fx(i)}" cy="${fy(cur[i])}" r="4.5" fill="#1b8a5a" stroke="#fff" stroke-width="2"/>`;
+      showTip(e, i === 0 ? `开始：首单 ${yen(-R.init)}` : `<b>${m.y}年${m.mo}月</b><br>累计净现金 ${yen(m.cum)}<br>当月净现金 ${yen(m.cash)}${m.refill ? `（补单 ${m.refill} 瓶）` : ""}<br>当月净利润 ${yen(m.profit)}`);
+    });
+    r.addEventListener("mouseleave", () => { hov.innerHTML = ""; hideTip(); });
+  });
+}
+
+function donut(R) {
+  const tot = R.streams.reduce((t, s) => t + Math.max(0, s[2]), 0) || 1;
+  const cx = 80, cy = 80, R1 = 72, R2 = 44; let a = -Math.PI / 2, g = "";
+  R.streams.forEach((s, i) => {
+    const v = Math.max(0, s[2]); if (!v) return;
+    let a2 = a + v / tot * 2 * Math.PI; if (a2 - a >= 2 * Math.PI - 1e-6) a2 -= 1e-4;
+    const lg = a2 - a > Math.PI ? 1 : 0, P = (r, t) => [cx + r * Math.cos(t), cy + r * Math.sin(t)];
+    const [x1, y1] = P(R1, a), [x2, y2] = P(R1, a2), [x3, y3] = P(R2, a2), [x4, y4] = P(R2, a);
+    g += `<path class="seg" data-i="${i}" d="M${x1},${y1}A${R1},${R1} 0 ${lg} 1 ${x2},${y2}L${x3},${y3}A${R2},${R2} 0 ${lg} 0 ${x4},${y4}Z" fill="${CAT[i]}" stroke="#fff" stroke-width="2"/>`;
+    a = a2;
+  });
+  g += txt(cx, cy, pct(R.streams[0][2] / tot), { anchor: "middle", size: 20, weight: 700, color: "#17261f" });
+  g += txt(cx, cy + 16, "来自房晚溢价", { anchor: "middle", size: 10.5 });
+  $("donut").innerHTML = `<svg viewBox="0 0 160 160" width="128">${g}</svg>`;
+  $("donutLeg").innerHTML = R.streams.map((s, i) => `<div class="lg"><i style="background:${CAT[i]}"></i><span>${s[0]}</span><b>${yen(s[2])}</b><em>${pct(Math.max(0, s[2]) / tot)}</em></div>`).join("")
+    + `<div class="lg" style="border-top:1px solid #e3e9e5;padding-top:5px"><i></i><span>扣成本后年净利</span><b>${yen(R.net)}</b><em>${pct(R.margin)}</em></div>`;
+  $("donut").querySelectorAll(".seg").forEach(p => {
+    p.addEventListener("mousemove", e => { const s = R.streams[+p.dataset.i]; showTip(e, `<b>${s[0]}</b><br>年收入 ${yen(s[1])}<br>年毛利 ${yen(s[2])}`); });
+    p.addEventListener("mouseleave", hideTip);
+  });
+}
+
+function render() {
+  syncInputs();
+  const E = eff(S), R = calc(E), b = R.years;
+  const premTxt = S.mode === "mix" ? `平均加价 ¥${E.prem.toFixed(0)}（¥30×${S.n30} / ¥40×${S.n40} / ¥50×${S.n50}）` : `每晚加价 ¥${S.prem}`;
+  $("kpis").innerHTML = [
+    ["首单投入", yen(R.init), `${E.rooms} 台 MiniSpace + ${E.rooms * 10} 瓶精油`],
+    ["回本时间", R.payM == null ? "未回本" : R.payM.toFixed(1) + " 个月", R.payN == null ? "24 个月内" : `约 ${Math.round(R.payN).toLocaleString()} 间夜`],
+    ["2027 年净利润", yen(R.profit2027), `${E.rooms} 间 · ${S.mode === "mix" ? "平均" : ""}加价 ¥${E.prem.toFixed(0)}`],
+    ["回本后年利润率", pct(R.margin), "含设备 2 年折旧"],
+    ["每月净赚（回本后）", yen(R.monthlyNet), `每月约 ${Math.round(R.nm)} 间夜`],
+  ].map(([k, v, s]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  $("verdict").innerHTML = `<b>${E.rooms} 间深睡房、${premTxt}、出租率 ${pct(S.occ)}（每月 ${Math.round(R.nm)} 单）：</b>${R.payM == null ? "24 个月内未回本，建议提高溢价或出租率。" : `约 ${R.payM.toFixed(1)} 个月收回首单 ${yen(R.init)}`}。2027 年全年净利润 <b>${yen(R.profit2027)}</b>，到 2028 年 10 月累计净现金 <b>${yen(R.cum24)}</b>。`;
+  cashChart(R); donut(R);
+  const pn = R.perNight;
+  $("ledger").innerHTML = [["深睡房溢价", pn.prem], ["客房精油耗用", pn.oil], ["现场零售精油 + 喷雾毛利", pn.retailOil], ["现场零售设备毛利", pn.retailDev], ["线上复购佣金", pn.comm], ["其他运营成本分摊", pn.other]]
+    .map(([n, v]) => `<tr><td>${n}</td><td class="${v < 0 ? "neg" : ""}">${v < 0 ? "−" : "+"}¥${Math.abs(v).toFixed(2)}</td></tr>`).join("")
+    + `<tr class="hl"><td>每间夜净赚</td><td>¥${pn.total.toFixed(2)}</td></tr><tr><td>× 每月间夜 ${R.nm.toFixed(0)}</td><td><b>${yen(R.monthlyNet)}/月</b></td></tr>`;
+  $("years").innerHTML = `<tr><th>年度</th><th>月数</th><th>深睡房间夜</th><th>收入</th><th>净利润</th><th>当年净现金</th><th>年末累计净现金</th></tr>`
+    + b.map((y, i) => `<tr class="${i === 1 ? "hl" : ""}"><td>${y.name}</td><td>${y.months}</td><td>${Math.round(y.nights).toLocaleString()}</td><td>${yen(y.rev)}</td><td>${yen(y.profit)}</td><td class="${y.cash < 0 ? "neg" : ""}">${yen(y.cash)}</td><td class="${y.endCum < 0 ? "neg" : ""}">${yen(y.endCum)}</td></tr>`).join("")
+    + `<tr><td><b>24 个月合计</b></td><td>24</td><td>${Math.round(b.reduce((t, y) => t + y.nights, 0)).toLocaleString()}</td><td>${yen(b.reduce((t, y) => t + y.rev, 0))}</td><td><b>${yen(b.reduce((t, y) => t + y.profit, 0))}</b></td><td>${yen(b.reduce((t, y) => t + y.cash, 0))}</td><td><b>${yen(R.cum24)}</b></td></tr>`;
+  const bench = [["深睡房项目", R.margin, CAT[0]], ["客房部", .745, "#9fb8ad"], ["餐饮部", .291, "#9fb8ad"], ["SPA 水疗", .24, "#9fb8ad"]];
+  $("bench").innerHTML = bench.map(([n, v, c]) => `<div class="hb"><span>${n}</span><span class="track"><i style="width:${Math.max(0, Math.min(1, v)) * 100}%;background:${c}"></i></span><b>${pct(v)}</b></div>`).join("");
+  const exp = [10, 20, 30, 50].map(n => ({ n, r: calc({ ...E, rooms: n }) }));
+  const mx = Math.max(...exp.map(e => e.r.net), 1);
+  $("expand").innerHTML = exp.map(e => `<div class="hb"><span>${e.n} 间<span style="color:#5d6e66"> · 投 ${wan(e.r.init)}</span></span><span class="track"><i style="width:${Math.max(0, e.r.net) / mx * 100}%;background:${e.n === E.rooms ? CAT[0] : "#8fbfa6"}"></i></span><b style="white-space:nowrap">${wan(e.r.net)}</b></div>`).join("")
+    + `<div class="notes"><p>每月其他运营成本按固定计，不随房间数增加。</p></div>`;
+  const rows = [];
+  for (const rooms of [[10, 30, 50].includes(E.rooms) ? null : E.rooms, 10, 30, 50].filter(x => x)) for (const [t, o] of [["保底", .65], ["达标", .80], ["冲刺", .90]]) rows.push([t, incentiveRow(E, rooms, o)]);
+  $("incent").innerHTML = `<tr><th>深睡房</th><th>档位</th><th>出租率</th><th>月目标（单）</th><th>精油 / 设备 / 喷雾</th><th>激励前月净利</th><th>销售/前台</th><th>客房部</th><th>达标+超额</th><th>激励后月净利</th></tr>`
+    + rows.map(([t, x]) => `<tr class="${x.rooms === 30 && t === "达标" ? "hl" : ""}"><td>${x.rooms} 间</td><td>${t}</td><td>${pct(x.occ)}</td><td><b>${Math.round(x.d).toLocaleString()}</b></td><td>${x.oil.toFixed(0)} / ${x.dev.toFixed(0)} / ${x.spray.toFixed(0)}</td><td>${yen(x.before)}</td><td>${yen(x.sales)}</td><td>${yen(x.hk)}</td><td>${yen(x.bonus)}</td><td><b>${yen(x.after)}</b></td></tr>`).join("");
+  $("monthly").innerHTML = `<tr><th>月份</th><th>间夜</th><th>溢价收入</th><th>现场零售</th><th>零售补货</th><th>佣金到账</th><th>补单（瓶）</th><th>补单付款</th><th>当月净现金</th><th>累计净现金</th><th>当月净利润</th></tr>`
+    + R.months.map(m => `<tr><td>${m.y}年${m.mo}月</td><td>${m.nights.toFixed(0)}</td><td>${yen(m.prem)}</td><td>${yen(m.retail)}</td><td class="neg">${yen(m.restock)}</td><td>${yen(m.comm)}</td><td>${m.refill || "—"}</td><td class="${m.refillPay ? "neg" : ""}">${m.refillPay ? yen(m.refillPay) : "—"}</td><td class="${m.cash < 0 ? "neg" : ""}">${yen(m.cash)}</td><td class="${m.cum < 0 ? "neg" : ""}"><b>${yen(m.cum)}</b></td><td>${yen(m.profit)}</td></tr>`).join("");
+}
+try { const h = new URLSearchParams(location.hash.slice(1)); for (const [k, v] of h) if (k === "mode") S.mode = v === "mix" ? "mix" : "one"; else if (k in S && !isNaN(+v)) S[k] = +v; } catch (e) {}
+render();
+</script>
+</body>
+</html>
